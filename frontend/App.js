@@ -3,9 +3,10 @@ import axios from "axios";
 import io from 'socket.io-client';
 import Cookies from 'universal-cookie';
 
-import { createMuiTheme } from '@material-ui/core/styles';
-import { ThemeProvider } from '@material-ui/styles';
+import {createMuiTheme} from '@material-ui/core/styles';
+import {ThemeProvider} from '@material-ui/styles';
 
+import ShowCard from "./card";
 
 import "./App.scss";
 
@@ -32,6 +33,7 @@ class App extends Component {
         super();
         this.state = {
             width: window.innerWidth,
+            cards: {}
         };
         this.socket = io();
         this.cookies = new Cookies();
@@ -41,12 +43,30 @@ class App extends Component {
 
         this.textref = React.createRef();
     }
+
     bindSocket() {
         this.socket.on('connect', function () {
             console.log("connected!")
         });
-        this.socket.on('event', function (data) {
-            console.log(`event:`, data)
+        this.socket.on('event', (data) => {
+            console.log(`event:`, data);
+
+            if (data.hash) {
+                if (!this.state.cards[data.hash]) {
+                    const hash = data.hash;
+                    const new_state = {
+                        ...this.state,
+                    };
+                    new_state.cards[hash] = <ShowCard key={hash} shash={hash}
+                                                      ref={React.createRef()}/>;
+                    this.setState(new_state, () => {
+                        this.state.cards[data.hash].ref.current.updateData(data);
+                    });
+                } else {
+                    console.log(data.hash, this.state.cards[data.hash]);
+                    this.state.cards[data.hash].ref.current.updateData(data);
+                }
+            }
         });
         this.socket.on('message', function (data) {
             console.log(`message:`, data)
@@ -95,7 +115,35 @@ class App extends Component {
         const val = this.textref.current.value;
         axios.post(`/api/${this.sid}/download_url`, {
             url: val
+        }).then((data) => {
+            const hash = data.data.hash;
+            const new_state = {
+                ...this.state,
+            };
+            new_state.cards[hash] = <ShowCard key={hash} shash={hash} ref={React.createRef()}/>;
+            this.setState(new_state);
         });
+    };
+
+    downloadEpisodeChain = (url, episode) => {
+        axios.post(`/api/${this.sid}/download_url`, {
+            url: `${url}/episode/${episode}`
+        }).then((data) => {
+            const hash = data.data.hash;
+            const new_state = {
+                ...this.state,
+            };
+            new_state.cards[hash] = <ShowCard key={hash} shash={hash} ref={React.createRef()}/>;
+            this.setState(new_state);
+            setTimeout(() => {
+                this.downloadEpisodeChain(url, episode + 1)
+            }, 3000);
+        });
+    };
+
+    downloadSeason = () => {
+        const val = this.textref.current.value;
+        this.downloadEpisodeChain(val, 1);
     };
 
     render() {
@@ -104,14 +152,19 @@ class App extends Component {
 
         return (
             <ThemeProvider theme={theme}>
-            <div id="main-content">
-                <div className="content">
-                    <div className="container">
-                        <input ref={this.textref} placeholder="url"/>
-                        <button onClick={this.download}>Submit</button>
+                <div id="main-content">
+                    <div className="content">
+                        <div className="container">
+                            <input ref={this.textref} placeholder="url"/>
+                            <button onClick={this.download}>Submit</button>
+                            <button onClick={this.downloadSeason}>Download Season</button>
+
+                            <div className="cardContainer">
+                                {Object.values(this.state.cards)}
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
             </ThemeProvider>
         );
     }
