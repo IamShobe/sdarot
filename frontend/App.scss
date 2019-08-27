@@ -1,0 +1,72 @@
+@import "./common/variables";
+
+@font-face {
+  font-family: "OpenSansHebrew";
+  src: url("fonts/OpenSansHebrew-Light.ttf");
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  background-color: $background_color;
+
+}
+
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none; /* Safari */
+  -khtml-user-select: none; /* Konqueror HTML */
+  -moz-user-select: none; /* Firefox */
+  -ms-user-select: none; /* Internet Explorer/Edge */
+  user-select: none;
+  /* Non-prefixed version, currently
+                                   supported by Chrome and Opera */
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  background-color: #fefefe;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #c0d5da;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-track {
+  -webkit-box-shadow: inset 0 0 6px rgba(181, 181, 181, 0.3);
+  background-color: #fcfcfc;
+  border-radius: 3px;
+}
+
+#root, #main-content {
+  width: 100%;
+  height: 100%;
+  font-family: "OpenSansHebrew", sans-serif;
+  display: flex;
+  min-width: 400px;
+}
+
+#main-content {
+  flex-direction: column;
+}
+
+.content {
+  flex: 1;
+  overflow: auto;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+
+  .container {
+    @extend %container;
+    flex-direction: column;
+    padding-top: 10px;
+    padding-bottom: 10px;
+    white-space: pre-line;
+    margin: 0 auto;
+
+  }
+}
