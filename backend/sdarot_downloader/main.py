@@ -15,6 +15,7 @@ HEADERS = {
 
 def download_url(url):
     session = requests.Session()
+    print("fetching page")
     page = session.get(url)
     content = page.content.decode("utf-8")
 
@@ -25,6 +26,7 @@ def download_url(url):
     season = int(re.search(r"var season\s*=\s*'(\d+)';", content).group(1))
     episode = int(re.search(r"var episode\s*=\s*'(\d+)';", content).group(1))
 
+    print("fetching token")
     token_resp = session.post("https://www.sdarot.pro/ajax/watch", data={
         "preWatch": True,
         "SID": SID,
@@ -37,10 +39,9 @@ def download_url(url):
     start_time = time.time()
     while True:
         time_passed = time.time() - start_time
-        if time_passed < 30:
-            break
-
         yield False, time_passed
+        if time_passed > 30:
+            break
 
     print("Times up!")
     vast_resp = session.post("https://www.sdarot.pro/ajax/watch", data={
@@ -57,6 +58,9 @@ def download_url(url):
     }, headers=headers)
 
     video_details = AttrDict(episode_response.json())
+    if "error" in video_details:
+        raise RuntimeError(video_details.error)
+
     episode_id = next(iter(video_details.watch))
     episode_token = video_details.watch[episode_id]
 
@@ -79,3 +83,11 @@ def write_to_file(resp):
             f.write(chunk)
 
 
+
+def main():
+    for is_finished, state in download_url(url):
+        pass
+
+
+if __name__ == '__main__':
+    main()

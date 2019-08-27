@@ -1,6 +1,7 @@
 import React, {Component} from "react";
 import axios from "axios";
 import io from 'socket.io-client';
+import Cookies from 'universal-cookie';
 
 import { createMuiTheme } from '@material-ui/core/styles';
 import { ThemeProvider } from '@material-ui/styles';
@@ -33,6 +34,7 @@ class App extends Component {
             width: window.innerWidth,
         };
         this.socket = io();
+        this.cookies = new Cookies();
         this.bindSocket();
         this.handleWindowSizeChange = this.handleWindowSizeChange.bind(this);
         this.showSettings = this.showSettings.bind(this);
@@ -51,6 +53,20 @@ class App extends Component {
         });
         this.socket.on('disconnect', function () {
             console.log("disconnected!")
+        });
+        this.socket.on('set_sid', (data) => {
+            console.log(data);
+            let room_id = data.sid;
+            const cookie_room = this.cookies.get('room_id');
+            console.log(cookie_room);
+            if (!cookie_room) {
+                this.cookies.set('room_id', data.sid);
+            } else {
+                room_id = cookie_room;
+            }
+
+            this.sid = room_id;
+            this.socket.emit("join", {"room": room_id});
         });
     }
 
@@ -77,7 +93,7 @@ class App extends Component {
 
     download = () => {
         const val = this.textref.current.value;
-        axios.post(`/api/download_url`, {
+        axios.post(`/api/${this.sid}/download_url`, {
             url: val
         });
     };
