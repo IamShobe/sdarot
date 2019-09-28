@@ -23,6 +23,7 @@ class ShowCard extends Component {
             Sname: "",
             episode: 0,
             season: 0,
+            SID: 0,
             main_bar: 0,
             secondary_bar: 0
         }
@@ -46,6 +47,7 @@ class ShowCard extends Component {
                 Sname: data.data.name[1] || "",
                 season: data.data.season || 1,
                 episode: data.data.episode || 0,
+                SID: data.data.SID || 0,
             });
         });
     }
@@ -110,7 +112,7 @@ class ShowCard extends Component {
             <div
                 className={classNames("card", {incomplete: this.state.state !== "download_complete"})}>
                 <div className="pic">
-                    <img src={URL}/>
+                    <img src={`https://static.sdarot.pro/series/${this.state.SID}.jpg`}/>
                     <div className="mask">
                         <div className="progress">
                             <div className="state">{this.state.state}</div>

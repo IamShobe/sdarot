@@ -137,7 +137,7 @@ class App extends Component {
             this.setState(new_state);
             setTimeout(() => {
                 this.downloadEpisodeChain(url, episode + 1)
-            }, 3000);
+            }, 10);
         });
     };
 
