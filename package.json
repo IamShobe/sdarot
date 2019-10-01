@@ -8,10 +8,6 @@
   },
   "author": "Elran Shefer",
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/IamShobe/elrados/issues"
-  },
-  "homepage": "https://github.com/IamShobe/elrados",
   "devDependencies": {
     "@babel/cli": "^7.1.0",
     "@babel/core": "^7.1.0",
