@@ -1,4 +1,6 @@
-const path = require("path");
+const webpack = require('webpack');
+const path = require('path');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
 
 module.exports = {
     devtool: "eval-source-map",
@@ -14,6 +16,15 @@ module.exports = {
         host: "0.0.0.0",
         disableHostCheck: true,
         port: 9002,
+        before() {
+            spawn(
+                'electron',
+                ['.'],
+                {shell: true, env: process.env, stdio: 'inherit'}
+            )
+                .on('close', code => process.exit(0))
+                .on('error', spawnError => console.error(spawnError))
+        },
         proxy: {
             '!(/static/**/**.*)': {
                 target: 'http://0.0.0.0:5002',
@@ -24,6 +35,12 @@ module.exports = {
         // 'html/home': './backend/sdarot_downloader/templates/index.html',
         'js/main': "./frontend/index.js"
     },
+    plugins: [
+        new HtmlWebpackPlugin(),
+        new webpack.DefinePlugin({
+            'process.env.NODE_ENV': JSON.stringify('development')
+        })
+    ],
     module: {
         rules: [
             {

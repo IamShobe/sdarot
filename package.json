@@ -1,7 +1,7 @@
 {
   "name": "sdarot_downloader",
   "version": "0.1.0",
-  "main": "frontend/index.js",
+  "main": "frontend/electron.js",
   "scripts": {
     "build": "webpack --config webpack.config.js --mode development",
     "start:dev": "webpack-dev-server"
@@ -32,9 +32,11 @@
   "dependencies": {
     "@material-ui/core": "^4.3.3",
     "@material-ui/icons": "^4.2.1",
+    "D": "^1.0.0",
     "axios": "^0.19.0",
     "cheeseburger-menu": "0.0.13",
     "classnames": "^2.2.6",
+    "electron": "^8.1.1",
     "react": "^16.8.6",
     "react-burger-menu": "^2.6.5",
     "react-dom": "^16.8.6",
