@@ -32,8 +32,9 @@ from .tasks import start_download
 
 app = Flask(__name__)
 app.clients = {}
-server = os.environ.get("SERVER")
-conn = redis.Redis(server)
+redis_server = os.environ.get("REDIS_SERVER")
+rabbit_server = os.environ.get("RABBIT_SERVER")
+conn = redis.Redis(redis_server)
 app.debug = True
 app.config['SECRET_KEY'] = 'top-secret!'
 
@@ -41,7 +42,7 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # Celery configuration
 RABBIT = f'amqp://{str(os.environ.get("USERNAME"))}:' \
-         f'{str(os.environ.get("PASSWORD"))}@{server}:5672/sdarot'
+         f'{str(os.environ.get("PASSWORD"))}@{rabbit_server}:5672/sdarot'
 app.config.update(
     broker_url=RABBIT,
     result_backend=RABBIT

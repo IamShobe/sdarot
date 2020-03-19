@@ -16,7 +16,8 @@ yarn install
 
 Configure env variables of rabbitmq server:
 ```
-$ENV:SERVER="domain"
+$ENV:RABBIT_SERVER="domain"
+$ENV:REDIS_SERVER="domain"
 $ENV:USERNAME="username"
 $ENV:PASSWORD="password"
 ```
