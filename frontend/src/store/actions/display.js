@@ -27,6 +27,7 @@ export const fetchMetadata = (url) => async (dispatch) => {
     } catch (e) {
         if (e.response.status === 404) {
             await dispatch(refreshMetadata(url));
+            return;
         }
         dispatch(updateMetadata(null));
     }

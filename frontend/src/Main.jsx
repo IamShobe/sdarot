@@ -184,6 +184,7 @@ export const Main = ({location, history}) => {
 
     const fetchUrl = useCallback(() => {
         const url = urlRef.current.value;
+        console.log(url);
         (async () => {
             setLoading(true);
             await dispatch(fetchMetadata(url));

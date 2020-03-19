@@ -41,8 +41,9 @@ function createWindow() {
     })
   } else {
     indexPath = url.format({
-      protocol: 'file:',
-      pathname: path.join(__dirname, 'dist', 'index.html'),
+      protocol: 'http:',
+      host: 'localhost:5002',
+      pathname: 'index.html',
       slashes: true
     })
   }
