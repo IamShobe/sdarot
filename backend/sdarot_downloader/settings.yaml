@@ -1,0 +1,3 @@
+config:
+  downloadPath: "E:/sdarot2"
+  metadataDir: "E:/sdarot2/__metadata__"

@@ -3,18 +3,19 @@ import os
 import ast
 import time
 
+import yaml
+from collections import namedtuple
+
+
 import requests
+from bs4 import BeautifulSoup
 
 from PIL import Image
 from attrdict import AttrDict
 
-FILE_WRITE_CHUNK = 1024 * 1024
+FILE_WRITE_CHUNK = 2 * 1024 * 1024
 
 URL_REGEX = r"(?P<base_url>.*?://.*?)/.*"
-
-DOWNLOAD_DIR = "/mnt/downloads/sdarot/"
-
-WINDOWS_DIR = "E:/sdarot"
 
 
 TEMPLATE = "[.ShellClassInfo]\r\n" \
@@ -22,25 +23,93 @@ TEMPLATE = "[.ShellClassInfo]\r\n" \
            "NoSharing=1\r\n" \
            "IconResource=cover.ico,0\r\n"
 
-def url_details(session, url):
+
+Details = namedtuple("Details", ["SID", "Sname", "season", "episode",
+                                 "headers", "base_url"])
+
+def url_details(url):
     print("fetching page")
-    page = session.get(url)
+    page = requests.get(url)
     content = page.content.decode("utf-8")
     match = re.match(URL_REGEX, url.decode())
     base_url = match.group("base_url")
     print(f"base_url: {base_url}")
     headers = {
         "origin": base_url,
-        "referer": url
+        "referer": url.decode()
     }
 
     SID = int(re.search(r"var SID\s*=\s*'(\d+)';", content).group(1))
     Sname = ast.literal_eval(
         re.search(r"var Sname\s*=\s*(\[.*\]);", content).group(1))
     season = int(re.search(r"var season\s*=\s*'(\d+)';", content).group(1))
-    episode = int(re.search(r"var episode\s*=\s*'(\d+)';", content).group(1))
+    try:
+        episode = int(re.search(r"var episode\s*=\s*'(\d+)';", content).group(1))
+    except:
+        episode = None
 
-    return SID, Sname, season, episode, headers, base_url
+    return Details(SID, Sname, season, episode, headers, base_url)
+
+
+class Metadata:
+    def __init__(self, url):
+        self.url = url
+        page = requests.get(url)
+        if page.status_code != 200:
+            raise RuntimeError("Invalid url")
+
+        content = page.content.decode("utf-8")
+        self.SID = int(re.search(r"var SID\s*=\s*'(\d+)';", content).group(1))
+        self.Sname = ast.literal_eval(
+            re.search(r"var Sname\s*=\s*(\[.*\]);", content).group(1))
+
+        match = re.match(URL_REGEX, url)
+        self.base_url = match.group("base_url")
+        self.soup = BeautifulSoup(content, 'html.parser')
+        self.img = self.soup.find(**{"class": "content"}).find(
+            **{"class": "img-responsive"}).get('src')
+
+    @classmethod
+    def from_dump(cls, dump):
+        return Metadata(url=dump['url'])
+
+    @classmethod
+    def dump_file(cls, name):
+        return f"{name}_metadata.yaml"
+
+    @property
+    def seasons(self):
+        seasons_links = self.soup.find(id="season").find_all("a")
+        seasons = []
+        for season in seasons_links:
+            link = f'{self.base_url}{season.get("href")}'
+            season_page = requests.get(link)
+            content = season_page.content.decode("utf-8")
+            page_soup = BeautifulSoup(content, 'html.parser')
+            episode_links = page_soup.find(id='episode').find_all('a')
+            episodes = []
+            for episode in episode_links:
+                e_link = f'{self.base_url}{episode.get("href")}'
+                episodes.append(dict(name=episode.text, url=e_link))
+
+            seasons.append(dict(name=season.text, url=link, episodes=episodes))
+
+        return seasons
+
+    @property
+    def config_name(self):
+        return self.dump_file(f"{self.Sname[1]}_{self.SID}")
+
+    @property
+    def dump(self):
+        return {
+            "names": self.Sname,
+            "url": self.url,
+            "image": self.img,
+            "seasons": self.seasons,
+            "SID": self.SID
+        }
+
 
 def fetch_episode(session, SID, season, episode, headers, base_url):
     while True:
@@ -106,10 +175,14 @@ def fetch_episode(session, SID, season, episode, headers, base_url):
         "uid": video_details.uid
     }, stream=True)
 
-    yield True, video_resp
+    yield True, (video_resp, session, video_url, {
+        "token": episode_token,
+        "time": video_details.time,
+        "uid": video_details.uid
+    })
 
-def create_folder(sid, folder_name):
-    base_dir = os.path.join(DOWNLOAD_DIR, folder_name)
+def create_folder(sid, folder_name, directory):
+    base_dir = os.path.join(directory, f"{folder_name}_{sid}")
     if not os.path.exists(base_dir):
         resp = requests.get(f"https://static.sdarot.pro/series/{sid}.jpg")
         os.makedirs(base_dir)
@@ -139,14 +212,24 @@ def create_folder(sid, folder_name):
             f.write(TEMPLATE.encode())
 
 
-def write_to_file(resp, folder_name, filename):
-    base_dir = os.path.join(DOWNLOAD_DIR, folder_name)
-    with open(os.path.join(base_dir, filename), "wb") as f:
+def write_to_file(resp, folder_name, filename, directory):
+    base_dir = os.path.join(directory, folder_name)
+    file_path = os.path.join(base_dir, filename)
+    if os.path.exists(file_path):
+        os.remove(file_path)
+
+    tmp_file = file_path + ".tmp"
+
+    with open(tmp_file, "wb") as f:
         total = 0
+        start = time.clock()
         for chunk in resp.iter_content(FILE_WRITE_CHUNK):
-            f.write(chunk)
-            total += FILE_WRITE_CHUNK
-            yield total
+            if chunk:
+                f.write(chunk)
+                total += len(chunk)
+                yield total, total // (time.clock() - start)
+
+    os.rename(tmp_file, file_path)
 
 
 def main():

@@ -15,7 +15,8 @@ from flask_socketio import SocketIO, emit
 from flask_socketio import join_room, leave_room
 from flask import render_template, copy_current_request_context, request
 
-from main import url_details, fetch_episode, write_to_file, create_folder
+from main import url_details, fetch_episode, write_to_file, \
+    create_folder
 
 app = Flask(__name__)
 app.debug = True
@@ -28,6 +29,9 @@ workers = lock.BoundedSemaphore(MAX_WORKERS)
 queue = Queue()
 
 threads = []
+
+
+DOWNLOAD_DIR = "/mnt/downloads/sdarot/"
 
 
 def back_thread():
@@ -129,7 +133,7 @@ def download(room_id):
     def start_download(room, url):
         print("downloading", url)
         try:
-            create_folder(SID, Sname[1])
+            create_folder(SID, Sname[1], DOWNLOAD_DIR)
             with workers:
                 ready_to_download[hashed_url]["state"] = "loading"
                 final_state = None
@@ -157,7 +161,8 @@ def download(room_id):
                                                Sname[1],
                                                season,
                                                episode
-                                           )):
+                                           ),
+                                           DOWNLOAD_DIR):
                     emit("event", {
                         "hash": hashed_url,
                         "state": "downloading",

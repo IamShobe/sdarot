@@ -4,3 +4,6 @@ backend/shaloms_light/static/
 
 .vscode/
 .idea/
+dev.ps1
+venv/
+*.log

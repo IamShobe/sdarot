@@ -1,109 +1,115 @@
-const webpack = require('webpack');
 const path = require('path');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
+const {spawn} = require('child_process');
+
+const src = path.resolve(__dirname, 'frontend', 'src');
+const dist = path.join(__dirname, 'frontend', 'dist');
 
 module.exports = {
     devtool: "eval-source-map",
     output: {
-        library: 'sdarotdownloader',
-        filename: "bundle.js",
-        path: path.resolve(__dirname, 'backend/sdarot_downloader/static')
+        filename: "static/[name].js",
+        path: dist,
+        publicPath: "/"
+    },
+    entry: {
+        hotLoader: 'react-hot-loader/patch',
+        main: path.resolve(src, 'index.js')
     },
     devServer: {
-        contentBase: path.join(__dirname, './backend/sdarot_downloader/'),
-        publicPath: '/static/',
-        watchContentBase: true,
+        contentBase: dist,
+        publicPath: '/',
         host: "0.0.0.0",
         disableHostCheck: true,
+        historyApiFallback: true,
         port: 9002,
+        hot: true,
         before() {
             spawn(
-                'electron',
-                ['.'],
+                'electron', ['.'],
                 {shell: true, env: process.env, stdio: 'inherit'}
             )
                 .on('close', code => process.exit(0))
                 .on('error', spawnError => console.error(spawnError))
         },
         proxy: {
-            '!(/static/**/**.*)': {
+            '/api/**': {
                 target: 'http://0.0.0.0:5002',
             },
+            '/socket.io/**': {
+                target: 'http://0.0.0.0:5002',
+            },
+
         },
     },
-    entry: {
-        // 'html/home': './backend/sdarot_downloader/templates/index.html',
-        'js/main': "./frontend/index.js"
-    },
     plugins: [
-        new HtmlWebpackPlugin(),
-        new webpack.DefinePlugin({
-            'process.env.NODE_ENV': JSON.stringify('development')
-        })
+        new HtmlWebpackPlugin({
+            template: path.resolve(src, 'index.html')
+        }),
     ],
+    resolve: {
+        extensions: ['.js', '.jsx'],
+        alias: {
+            'react-dom': '@hot-loader/react-dom',
+            "~": path.resolve(src),
+        }
+    },
     module: {
         rules: [
             {
-                test: /\.jsx?/,
-                include: path.resolve(__dirname, "frontend"),
-                loader: "babel-loader"
+                test: /\.jsx?$/,
+                loader: 'babel-loader',
+                exclude: /node_modules/,
             },
             {
-                test: /\.html$/,
-                use: [
-                    {
-                        loader: 'html-loader',
-                    },
-                ],
+                test: /\.inline.svg$/,
+                loader: 'react-svg-loader',
             },
             {
-                test: /\.(jpe?g|png|gif|svg)$/i,
-                loader: "file-loader",
+                test: /^(?!.*\.inline\.svg$).*\.svg$/,
+                loader: 'svg-url-loader',
                 options: {
-                    name: "[name].[ext]",
-                    outputPath: "img/",
-                    publicPath: "static/img/"
-                }
+                    limit: 10000,
+                    name: '[name].[ext]',
+                    outputPath: 'static/avatars/',
+                    publicPath: '/static/avatars/',
+                },
+            },
+            {
+                test: /\.(jpe?g|png|gif)$/i,
+                loader: 'file-loader',
+                options: {
+                    name: '[name].[ext]',
+                    outputPath: 'static/img/',
+                    publicPath: '/static/img/',
+                },
             },
             {
                 test: /\.(ttf)$/i,
-                loader: "file-loader",
+                loader: 'file-loader',
                 options: {
-                    name: "[name].[ext]",
-                    outputPath: "font/",
-                    publicPath: "static/font/"
-                }
+                    name: '[name].[ext]',
+                    outputPath: 'static/font/',
+                    publicPath: '/static/font/',
+                },
             },
             {
                 test: /\.(scss|css)$/,
-
-                use: [
-                    {
-                        loader: 'style-loader'
-                    },
-                    {
-                        loader: 'css-loader'
-                    },
-                    {
-                        loader: 'sass-loader'
-                    }
-                ]
-            }
-        ]
+                use: ['style-loader', 'css-loader', 'sass-loader'],
+            },
+        ],
     },
     optimization: {
+        runtimeChunk: true,
         splitChunks: {
             cacheGroups: {
-                vendors: {
-                    priority: -10,
-                    test: /[\\/]node_modules[\\/]/
-                }
-            },
-
-            chunks: 'async',
-            minChunks: 1,
-            minSize: 30000,
-            name: true
+                vendor: {
+                    test: /node_modules/,
+                    chunks: 'initial',
+                    name: 'vendor',
+                    enforce: true
+                },
+            }
         }
     }
 }
