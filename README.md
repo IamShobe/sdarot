@@ -18,11 +18,10 @@ Configure env variables of rabbitmq server:
 ```
 $ENV:RABBIT_SERVER="domain"
 $ENV:REDIS_SERVER="domain"
+# used for rabbit mq
 $ENV:USERNAME="username"
 $ENV:PASSWORD="password"
 ```
-
-SERVER variable should be a dns to server containing `redis` service and `rabbitmq` service.
 
 terminal 1 - celery worker:  
 ```
