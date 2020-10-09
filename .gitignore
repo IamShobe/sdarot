@@ -1,5 +1,5 @@
 node_modules/
-backend/shaloms_light/static/
+backend/sdarot_downloader/static/
 *.pyc
 
 .vscode/
