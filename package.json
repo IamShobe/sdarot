@@ -44,7 +44,7 @@
     "electron": "^8.1.1",
     "electron-devtools-installer": "^2.2.4",
     "html-webpack-plugin": "^3.2.0",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.21",
     "react": "^16.8.6",
     "react-burger-menu": "^2.6.5",
     "react-dom": "^16.13.0",
